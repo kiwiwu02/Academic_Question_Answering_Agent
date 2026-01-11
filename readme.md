@@ -1,6 +1,6 @@
 # Academic_Question_Answering_Agent
 
->「学术问答智能体」的全栈实现，尤其是端到端对话链路、工具调用、流式协议与落库一致性。
+>这是一个面向学术问题的全栈问答智能体：前端提供多会话聊天界面，后端用 FastAPI + SQLite 持久化对话，并通过 LangChain 集成 arXiv 工具辅助检索与总结论文。
 
 ![项目](./assets/项目展示.png)
 
