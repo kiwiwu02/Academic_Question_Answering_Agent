@@ -53,35 +53,48 @@ BAI_LIAN_BASE_URL=YOUR_BASE_URL
 - 开发代理：保持调用相对路径 `/api/...`；本地由 Vite 转发到 `http://127.0.0.1:8000`。
 
 ## 3) 后端架构（FastAPI + SQLAlchemy + LangChain）
-- 应用启动使用 lifespan：启动时自动建表。
-- 数据层分三层：
-  - ORM 模型：会话表 + 消息表；会话删除会级联删除消息。
-  - CRUD：数据库写入/查询集中在 CRUD 层完成。
-  - API：路由函数负责参数校验/拼装 history/调用 agent/返回响应。
-- Agent 层：
-  - 使用 `create_agent(...)` 创建 agent，并加载 `arxiv` 工具。
-  - 使用 OpenAI 兼容接口的三要素：模型名、API Key、Base URL（由环境变量提供）。
-  - 全局单例：后端进程内复用同一个 agent 实例。
 
+>
 
-- `main.py`（应用入口 / FastAPI）
-  - 通过 `include_router` 挂载路由（把 `api.py` 的路由注册到 app 上）。
-  - 启动时调用 `create_tables` 建表（对应 `database.py`）。
-- `api.py`（后端应用接口 / FastAPI + 依赖注入）
-  - 定义 `/api/chat/...` 下的会话与消息接口。
-  - 用 `get_db` 注入数据库会话（对应 `database.py`）。
-  - 调用 `crud.py` 做数据库读写。
-  - 调用 `agent_service`（Agent 服务）生成回答，并把结果落库。
-- `database.py`（数据库引擎接口 / SQLAlchemy）
-  - 创建 SQLite 引擎与会话工厂，并提供 `get_db` 给 API 层使用。
-  - 提供 `create_tables` 给应用启动时建表。
-- `crud.py`（数据库操作接口 / SQLAlchemy）
-  - 封装会话与消息的增删改查：API 层尽量只负责“参数校验 + 调用 CRUD + 拼装响应”。
-- `models.py`（数据结构 / SQLAlchemy ORM）
-  - 定义 `ChatSession` 与 `ChatMessage` 表结构，以及会话-消息的关联与级联删除。
-- `schemas.py`（数据接口定义 / Pydantic）
-  - 定义请求/响应结构：会话、消息、ChatRequest/ChatResponse。
-  - `tool_calls/tool_results` 作为可选字段，用于保留工具调用信息（便于调试与可解释性）。
+<div style="max-height:460px; overflow-y:auto; padding:8px 4px; border:1px solid #d0d7de; border-radius:12px; scroll-snap-type:y mandatory; -webkit-overflow-scrolling:touch;">
+  <div style="scroll-snap-align:start; border:1px solid #d0d7de; border-radius:12px; padding:12px; margin:10px 0;">
+    <strong>启动与生命周期</strong>
+    <ul>
+      <li>应用启动使用 <code>lifespan</code>：启动时自动建表。</li>
+      <li>启动时调用 <code>create_tables</code>（对应 <code>database.py</code>）。</li>
+    </ul>
+  </div>
+
+  <div style="scroll-snap-align:start; border:1px solid #d0d7de; border-radius:12px; padding:12px; margin:10px 0;">
+    <strong>数据层分层</strong>
+    <ul>
+      <li><strong>ORM 模型</strong>：会话表 + 消息表；会话删除会级联删除消息。</li>
+      <li><strong>CRUD</strong>：数据库写入/查询集中在 CRUD 层完成。</li>
+      <li><strong>API</strong>：路由函数负责参数校验 / 拼装 history / 调用 agent / 返回响应。</li>
+    </ul>
+  </div>
+
+  <div style="scroll-snap-align:start; border:1px solid #d0d7de; border-radius:12px; padding:12px; margin:10px 0;">
+    <strong>Agent 层</strong>
+    <ul>
+      <li>使用 <code>create_agent(...)</code> 创建 agent，并加载 <code>arxiv</code> 工具。</li>
+      <li>OpenAI 兼容接口三要素：模型名、API Key、Base URL（由环境变量提供）。</li>
+      <li>全局单例：后端进程内复用同一个 agent 实例。</li>
+    </ul>
+  </div>
+
+  <div style="scroll-snap-align:start; border:1px solid #d0d7de; border-radius:12px; padding:12px; margin:10px 0;">
+    <strong>文件职责速览</strong>
+    <ul>
+      <li><code>main.py</code>：应用入口；<code>include_router</code> 挂载路由；启动时建表。</li>
+      <li><code>api.py</code>：定义 <code>/api/chat/...</code> 接口；依赖注入 <code>get_db</code>；调用 <code>crud.py</code>；调用 <code>agent_service</code> 生成回答并落库。</li>
+      <li><code>database.py</code>：SQLite 引擎与会话工厂；提供 <code>get_db</code> 与 <code>create_tables</code>。</li>
+      <li><code>crud.py</code>：会话与消息的增删改查封装。</li>
+      <li><code>models.py</code>：<code>ChatSession</code>/<code>ChatMessage</code> 表结构与关联、级联删除。</li>
+      <li><code>schemas.py</code>：Pydantic 请求/响应；<code>tool_calls</code>/<code>tool_results</code> 可选字段用于保留工具调用信息。</li>
+    </ul>
+  </div>
+</div>
 
 ## 4) 数据模型与落库规则
 - `ChatSession`：`id/title/created_at/updated_at`。
