@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+python-dotenv
+
+# LangChain + OpenAI-compatible provider
+langchain
+langchain-core
+langchain-community
+langchain-openai
+
+# arXiv tool dependency used by langchain_community
+arxiv
